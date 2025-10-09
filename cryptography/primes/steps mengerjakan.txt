@@ -1,0 +1,3 @@
+1. saya mengerjakannya dengan lingkup ubuntu dengan pertama membuat file primes_solved
+2. membuat script python3 pada solved_primes.py dan memasukkan file output.txt lalu jalankan kodenya
+3. setelah jalankan kodenya, akan muncul hasil seperti ini FOUND (triplet): b'NCLPS1{rs4_w1th_much_Of_pr!me_numb3rs}'

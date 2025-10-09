@@ -1,0 +1,5 @@
+pertama mengubah sinyal wav.file dengan tools https://dtmf.netlify.app/. setelah di ubah semua lalu:
+1. hitung φ= (p-1)*(q-1) dengan menggunakan https://www.dcode.fr/math-expression-expand
+2. hitung d. biasanya d invers modular dari e terhadap modulus φ dengan menggunakan tools https://www.dcode.fr/modular-inverse. bilangan integer number A di isikan angka 6557 dan untuk modulo N di isi angka dari hasil φ
+3. Hitung m = c^d mod n (eksponen modular) dengan menggunakan tools https://www.dcode.fr/modular-exponentiation
+4. menghitung total angka semua dengan tools https://www.dcode.fr/rsa-cipher

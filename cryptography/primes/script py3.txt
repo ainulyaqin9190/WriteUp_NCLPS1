@@ -1,0 +1,60 @@
+from itertools import combinations
+from math import gcd
+import ast
+
+# paste atau parse dari output.txt
+txt = open("output.txt").read()
+# contoh line: p = [21822..., ...]
+line_p = [l for l in txt.splitlines() if l.startswith("p =")][0]
+line_c = [l for l in txt.splitlines() if l.startswith("c =")][0]
+
+primes = ast.literal_eval(line_p.split("=",1)[1].strip())
+ct = int(line_c.split("=",1)[1].strip())
+e = 65537
+
+def modinv(a, m):
+    # extended euclid
+    a = a % m
+    if gcd(a, m) != 1:
+        return None
+    x0, x1, b = 1, 0, m
+    aa = a
+    while b:
+        q = aa // b
+        aa, b, x0, x1 = b, aa - q*b, x1, x0 - q*x1
+    return x0 % m
+
+def try_combo(combo):
+    n = 1
+    for p in combo:
+        n *= p
+    # compute phi = product(p-1)
+    phi = 1
+    for p in combo:
+        phi *= (p - 1)
+    d = modinv(e, phi)
+    if d is None:
+        return None
+    m = pow(ct, d, n)
+    try:
+        bs = m.to_bytes((m.bit_length()+7)//8, 'big')
+        if b'NCLPS1' in bs:
+            return bs
+    except:
+        return None
+
+# coba kombinasi 2 dahulu
+for a,b in combinations(primes, 2):
+    res = try_combo((a,b))
+    if res:
+        print("FOUND (pair):", res)
+        raise SystemExit
+
+# coba kombinasi 3
+for combo in combinations(primes, 3):
+    res = try_combo(combo)
+    if res:
+        print("FOUND (triplet):", res)
+        raise SystemExit
+
+print("tidak ketemu kombinasi 2/3 — tapi biasanya ditemukan pada ukuran kecil")

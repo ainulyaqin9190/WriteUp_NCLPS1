@@ -1,0 +1,119 @@
+# decrypt_fixed.py
+import hashlib
+
+A = 69069
+M = 2**32
+MAX_INIT = 2**27  # sesuai chall: random.randint(0, 2**27) -> 0..2**27 inclusive
+
+cipher_hex = "d0e3094ebed1f12ac681efe295f3b16d8047b9d51f0dd1a322f0d0a8df9c68f62778987611e9cade7b76946a994c44db"
+sha256_expected = "781ea8ef7526f9e0abf2362a30ebf1e46ada7ed0dfd4dd55321d4a6baef4cd49"
+prefix = "NCLPS1"
+
+cipher_bytes = bytes.fromhex(cipher_hex)
+
+def swap_forward(out_byte, mode):
+    b = out_byte & 0xFF
+    if mode == 0:
+        var1 = (b & 0xAA) >> 1
+        var2 = (2 * b) & 0xAA
+        return (var1 | var2) & 0xFF
+    elif mode == 1:
+        var1 = (b & 0xCC) >> 2
+        var2 = (4 * b) & 0xCC
+        return (var1 | var2) & 0xFF
+    else:
+        var1 = (b & 0xF0) >> 4
+        var2 = (16 * b) & 0xF0
+        return (var1 | var2) & 0xFF
+
+# build inverse maps (swapped_byte -> [possible original_outs])
+inv_maps = []
+for mode in range(3):
+    d = {}
+    for out in range(256):
+        s = swap_forward(out, mode)
+        d.setdefault(s, []).append(out)
+    inv_maps.append(d)
+
+def update_state(cur_state, plain_ord):
+    return (A * cur_state + plain_ord) % M
+
+# find candidate initial states consistent with first cipher byte and known prefix[0]
+c0 = cipher_bytes[0]
+candidates = []
+
+for mode in range(3):
+    inv_outs = inv_maps[mode].get(c0, [])
+    for out in inv_outs:
+        xor_key = out ^ ord(prefix[0])      # (state >> 8) & 0xFF must equal this
+        # Enumerate states where bits8..15 == xor_key:
+        # base_block = (xor_key << 8); then add low8 (0..255) and high-blocks (k * 65536)
+        base_block = xor_key << 8
+        step = 1 << 16   # 65536
+        # iterate over all high-blocks
+        k = 0
+        while True:
+            block_base = (k * step) + base_block
+            if block_base >= MAX_INIT:
+                break
+            # add low 0..255
+            for low in range(256):
+                s = block_base + low
+                if s > MAX_INIT:  # MAX_INIT inclusive in original random.randint
+                    continue
+                if (s % 3) == mode:
+                    candidates.append(s)
+            k += 1
+
+print("Rough candidates after first byte:", len(candidates))
+
+# filter candidates using full known prefix
+def check_prefix(s_init):
+    s = s_init
+    for i, ch in enumerate(prefix):
+        xor_key = (s >> 8) & 0xFF
+        out = ord(ch) ^ xor_key
+        mode = s % 3
+        swapped = swap_forward(out, mode)
+        if swapped != cipher_bytes[i]:
+            return False
+        s = update_state(s, ord(ch))
+    return True
+
+filtered = []
+for s in candidates:
+    if check_prefix(s):
+        filtered.append(s)
+
+print("Candidates after filtering by prefix:", len(filtered))
+if len(filtered) == 0:
+    print("Tidak ada kandidat yang lolos (aneh) — tapi coba jalankan brute force lebih luas atau cek asumsi prefix.")
+else:
+    # decrypt full with each filtered candidate
+    def decrypt_full(initial_state):
+        s = initial_state
+        res = []
+        for i in range(len(cipher_bytes)):
+            mode = s % 3
+            inv_outs = inv_maps[mode].get(cipher_bytes[i], [])
+            if not inv_outs:
+                return None
+            out = inv_outs[0]
+            plain_ord = out ^ ((s >> 8) & 0xFF)
+            res.append(plain_ord)
+            s = update_state(s, plain_ord)
+        return bytes(res)
+
+    for s in filtered:
+        pt = decrypt_full(s)
+        if pt is None:
+            continue
+        try:
+            text = pt.decode('utf-8')
+        except:
+            text = pt.decode('latin-1')
+        h = hashlib.sha256(pt).hexdigest()
+        print("----")
+        print("Initial state:", s)
+        print("Plaintext:", text)
+        print("SHA256:", h, "MATCH?" , h == sha256_expected)

@@ -1,0 +1,10 @@
+steps untuk mengerjakan soal ctf not key cryptograpy:
+1. buka file output.txt yang berisi enskripsinya/ciphertextnya.
+
+2. kemudian menghitung keystream XOR byte per byte dan hasilnya seperti ini:
+ct (first 7 bytes hex) : 3d 70 0f 22 60 65 5a  (ciphertext 7 byte pertama)
+pt (NCLPS1{   hex)    : 4e 43 4c 50 53 31 7b   (plaintext 7 bytepertama): NCLPS1{
+XOR result (hex)      : 73 33 43 72 33 54 21
+XOR result (ASCII)    : s  3  C  r  3  T  !
+cara menghitung atau mendapatkan angka XOR result (hex) adalah dengan menggunakan tools https://xor.pw/# dan hasilnya berupa XOR result (hex), kemudian buka tools https://gchq.github.io/CyberChef/#recipe=From_Hex('Space')&input=NzMgMzMgNDMgNzIgMzMgNTQgMjE dan hasilnya XOR result (ASCII)
+3. lalu buka tools https://www.dcode.fr/xor-cipher. disitu paste ciphertext yang dari file output.txt tersebut. kemudian atur key seperti ini : s3Cr3T!

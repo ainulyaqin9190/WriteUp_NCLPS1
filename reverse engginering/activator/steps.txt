@@ -1,0 +1,2 @@
+1. buka tools https://www.dcode.fr/strings-extractor lalu update file pada kolom yang tersedia
+2. lalu bacalah hasilnya dan ketemu hasil flagnya tersebut
